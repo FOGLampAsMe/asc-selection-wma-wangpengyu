@@ -1,0 +1,21 @@
+--- a/scripts/evaluation/world_model_interaction_t4_fp16_staged.py
++++ b/scripts/evaluation/world_model_interaction_t4_fp16_cached.py
+@@
++_CACHED_MODEL = None
++_CACHED_DATA = None
++
+ def run_inference(args: argparse.Namespace, gpu_num: int, gpu_no: int) -> None:
++    global _CACHED_MODEL, _CACHED_DATA
+@@
+-    model = instantiate_from_config(config.model)
+-    model = load_model_checkpoint(model, args.ckpt_path)
+-    data = instantiate_from_config(config.data)
+-    data.setup()
++    if _CACHED_MODEL is None:
++        model = instantiate_from_config(config.model)
++        model = load_model_checkpoint(model, args.ckpt_path)
++        data = instantiate_from_config(config.data)
++        data.setup()
++        _CACHED_MODEL, _CACHED_DATA = model, data
++    else:
++        model, data = _CACHED_MODEL, _CACHED_DATA
