@@ -8,7 +8,9 @@
 
 ## 完成情况
 
-已在同一 Colab T4 会话中完成 WMA Baseline、GPU 采样、日志计时、官方 PSNR 计算，以及“模型和数据集常驻复用”优化。Baseline 输出视频为 16 帧，程序返回码为 0，PSNR 为 21.1719 dB。常驻复用将同一进程的后续请求从 251.5469 s 降至 13.2672 s，PSNR 为 21.1722 dB。
+已在同一 Colab T4 会话中完成 WMA Baseline、GPU 采样、日志计时、官方 PSNR 计算，以及 3 种优化尝试。Baseline 输出视频为 16 帧，程序返回码为 0，PSNR 为 21.1719 dB。常驻复用、`torch.inference_mode()` 和关闭非必要 TensorBoard 写入的完整结果见 `results/final_selection_results.json`。
+
+最终实测：冷启动 252.9508 s；常驻复用 14.6757 s（17.2361x）；常驻 + inference_mode 14.1748 s（相对常驻 1.0353x）；常驻 + no-TensorBoard 9.8661 s（相对常驻 1.4875x）。四个视频均通过 ffprobe 的 16 帧、512x320 检查，PSNR 均约 21.172 dB。
 
 当前目录是轻量复现仓库，不包含模型权重、数据集和生成视频；这些文件按报告中的 Colab 命令下载到 `/content`。
 
@@ -44,5 +46,4 @@ unconditional_guidance_scale=1.0, guidance_rescale=0.7, perframe_ae
 
 `patches/resident_model_reuse.patch` 展示了将模型与数据集初始化移入模块级缓存，并在后续请求复用的修改。此修改只针对实测的冷启动瓶颈，不改变模型权重、输入、采样参数或评价脚本。
 
-最终选拔还要求至少 3 种优化尝试；本仓库会在 Colab 重新完成 `torch.inference_mode()` 和关闭非必要 TensorBoard 写入两项对照后补全 `results/final_selection_results.json`。
-
+最终选拔要求至少 3 种优化尝试，本仓库已记录并提交 3 种实际对照结果。

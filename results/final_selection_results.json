@@ -1,0 +1,88 @@
+{
+  "experiment": "final_selection_three_wma_optimizations",
+  "environment": {
+    "gpu": "Tesla T4",
+    "vram_mib": 15360,
+    "python": "3.10.18",
+    "pytorch": "2.3.1+cu121",
+    "cuda": "12.1",
+    "case": "unitree_g1_pack_camera/case1",
+    "input": "320x512, 16 frames, seed=123, frame_stride=6",
+    "ddim_steps": 1,
+    "n_iter": 1,
+    "exe_steps": 16
+  },
+  "runs": [
+    {
+      "name": "cold_baseline_reference",
+      "seconds": 252.950831925,
+      "psnr_db": 21.1719,
+      "returncode": 0,
+      "video_frames": 16,
+      "video_resolution": "512x320"
+    },
+    {
+      "name": "resident_reuse_reference",
+      "seconds": 14.675670799,
+      "psnr_db": 21.1722,
+      "returncode": 0,
+      "video_frames": 16,
+      "video_resolution": "512x320"
+    },
+    {
+      "name": "resident_inference_mode",
+      "seconds": 14.174752716,
+      "psnr_db": 21.1722,
+      "returncode": 0,
+      "video_frames": 16,
+      "video_resolution": "512x320"
+    },
+    {
+      "name": "resident_no_tensorboard",
+      "seconds": 9.866121458,
+      "psnr_db": 21.1722,
+      "returncode": 0,
+      "video_frames": 16,
+      "video_resolution": "512x320"
+    }
+  ],
+  "optimizations": [
+    {
+      "name": "模型和数据集常驻复用",
+      "reference_seconds": 252.950831925,
+      "optimized_seconds": 14.675670799,
+      "psnr_db": 21.1722,
+      "speedup": 17.236066098,
+      "latency_reduction_pct": 94.198212084,
+      "status": "PASS",
+      "conclusion": "直接对应冷启动初始化瓶颈，收益最大"
+    },
+    {
+      "name": "torch.inference_mode",
+      "reference_seconds": 14.675670799,
+      "optimized_seconds": 14.174752716,
+      "psnr_db": 21.1722,
+      "speedup": 1.035338753,
+      "latency_reduction_pct": 3.413255107,
+      "status": "PASS",
+      "conclusion": "在已复用模型的基础上小幅降低框架开销"
+    },
+    {
+      "name": "关闭非必要 TensorBoard 写入",
+      "reference_seconds": 14.675670799,
+      "optimized_seconds": 9.866121458,
+      "psnr_db": 21.1722,
+      "speedup": 1.487481262,
+      "latency_reduction_pct": 32.772262385,
+      "status": "PASS",
+      "conclusion": "保留视频保存和 PSNR，去除额外事件写入后减少 I/O"
+    }
+  ],
+  "gpu_monitor": {
+    "samples": 302,
+    "max_used_mib": 9677,
+    "max_util_pct": 100,
+    "mean_util_pct": 10.973509934
+  },
+  "video_validation": "四个输出均 ffprobe returncode=0，16 帧，512x320"
+}
