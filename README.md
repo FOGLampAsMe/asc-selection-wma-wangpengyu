@@ -2,6 +2,7 @@
 
 姓名：王鹏宇  
 学号：240809010506  
+专业和年级：24届计算机科学与技术  
 题目：Embodied World Model / UnifoLM-WMA-0  
 场景：`unitree_g1_pack_camera / case1`  
 资源：Google Colab Tesla T4 15 GB，Python 3.10，PyTorch 2.3.1+cu121
