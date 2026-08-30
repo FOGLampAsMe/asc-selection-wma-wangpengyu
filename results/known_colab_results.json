@@ -1,0 +1,30 @@
+{
+  "environment": {
+    "gpu": "Tesla T4",
+    "vram_mib": 15360,
+    "python": "3.10.18",
+    "pytorch": "2.3.1+cu121",
+    "cuda": "12.1",
+    "case": "unitree_g1_pack_camera/case1"
+  },
+  "baseline": {
+    "elapsed_seconds": 264.1105,
+    "psnr_db": 21.1719,
+    "returncode": 0,
+    "video": "inference/0_full_fs6.mp4",
+    "peak_memory_mib": 9677,
+    "gpu_mean_util_pct": 3.31,
+    "gpu_samples": 262
+  },
+  "resident_model_reuse": {
+    "cold_seconds": 251.54686374,
+    "resident_seconds": 13.267160533,
+    "cold_psnr_db": 21.17193254,
+    "resident_psnr_db": 21.17216974,
+    "speedup": 18.96011306,
+    "latency_reduction_pct": 94.72576985,
+    "returncode": 0,
+    "peak_memory_mib": 9677,
+    "video": "inference/0_full_fs6.mp4"
+  }
+}
