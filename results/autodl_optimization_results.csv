@@ -1,0 +1,4 @@
+experiment,time_s,psnr_db,quality
+baseline_cold_same_process,149.5939,31.52061179,pass
+resident_model_dataset_reuse,83.6751,31.52348509,pass
+full_rollout_n_iter_11,not_recorded,22.80605661,below_single_round_threshold
