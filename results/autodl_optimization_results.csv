@@ -1,0 +1,6 @@
+experiment,time_s,psnr_db,quality
+baseline_perframe_ae,134,31.52061179,pass
+disable_perframe_ae,152,31.51691687,pass
+ddim_steps_25,152,6.89479165,fail
+guidance_scale_1.5,158,31.52061179,pass
+full_rollout_n_iter_11,not_recorded,22.80605661,below_single_round_threshold
