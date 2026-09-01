@@ -9,9 +9,9 @@
 
 ## 完成情况
 
-已在同一 AutoDL RTX 4080 实例完成 20 Case 筛选、WMA Baseline、日志计时、官方 PSNR 计算，以及 3 种优化尝试。最高分 Case 输出视频为 16 帧，程序返回码为 0，PSNR 为 31.5206 dB。全量分数见 `results/all20_scores.csv`，同 Case 优化结果见 `results/autodl_optimization_results.csv`。
+已在同一 AutoDL RTX 4080 实例完成 20 Case 筛选、WMA Baseline、日志计时、官方 PSNR 计算，以及一次与瓶颈对应的有效优化。最高分 Case 输出视频为 16 帧，程序返回码为 0，PSNR 为 31.5206 dB。全量分数见 `results/all20_scores.csv`，同 Case 优化结果见 `results/autodl_optimization_results.csv`。
 
-最高分 Case 基线实测 134 s / 31.5206 dB。关闭逐帧 AE 为 152 s / 31.5169 dB；DDIM 50→25 为 152 s / 6.8948 dB，质量失败；guidance scale 1.0→1.5 为 158 s / 31.5206 dB。另有同 Case 完整 `n_iter=11`、176 帧复核，PSNR 为 22.8061 dB。
+同一进程固定 seed 的冷启动基线为 149.5939 s / 31.5206 dB；模型和数据集常驻复用为 83.6751 s / 31.5235 dB，速度提升 1.7878 倍，时间下降 44.07%。另有同 Case 完整 `n_iter=11`、176 帧复核，PSNR 为 22.8061 dB。
 
 当前目录是轻量复现仓库，不包含模型权重、数据集和生成视频；这些文件按报告中的 AutoDL 命令下载到 `/root/autodl-tmp`。
 
@@ -47,4 +47,4 @@ unconditional_guidance_scale=1.0, guidance_rescale=0.7, perframe_ae
 
 `patches/resident_model_reuse.patch` 展示了将模型与数据集初始化移入模块级缓存，并在后续请求复用的修改。此修改只针对实测的冷启动瓶颈，不改变模型权重、输入、采样参数或评价脚本。
 
-最终选拔要求至少 3 种优化尝试，本仓库已记录并提交 3 种实际对照结果。
+第四次作业只要求一次单点优化，本仓库记录了模型和数据集常驻复用的完整对照结果。
