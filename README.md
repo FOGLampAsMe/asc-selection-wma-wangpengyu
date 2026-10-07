@@ -1,52 +1,51 @@
 # UnifoLM-WMA-0 大题提交材料
 
-> 本仓库对应最终选拔材料的重复提交第二版。
-
 姓名：王鹏宇  
 学号：240809010506  
 专业和年级：24届计算机科学与技术  
-题目：Embodied World Model / UnifoLM-WMA-0  
-筛选场景：五个场景 Case1-4，共 20 个 Case；最终选用 `unitree_z1_stackbox / case1`  
-资源：AutoDL NVIDIA GeForce RTX 4080，Python 3.10.18，PyTorch 2.3.1+cu121，CUDA 12.1
+题目：Embodied World Model / UnifoLM-WMA-0
 
-## 完成情况
+## 正式实验环境
 
-已在同一 AutoDL RTX 4080 实例完成 20 Case 筛选、WMA Baseline、日志计时、官方 PSNR 计算，以及一次与瓶颈对应的有效优化。最高分 Case 输出视频为 16 帧，程序返回码为 0，PSNR 为 31.5206 dB。全量分数见 `results/all20_scores.csv`，同 Case 优化结果见 `results/autodl_optimization_results.csv`。
+- GPU：NVIDIA GeForce RTX 4090 D
+- AMP：FP16 autocast
+- 运行方式：同一台服务器、同一份权重、同一组输入和 `seed=123`
+- 采样：50 步 DDIM，官方 `n_iter`，完整输出
+- 输出：512×320，8 fps；不减少采样步数、交互轮数或输出帧数
+- 评价：官方 PSNR 脚本，另检查进程返回码和视频元数据
 
-同一进程固定 seed 的冷启动基线为 149.5939 s / 31.5206 dB；模型和数据集常驻复用为 83.6751 s / 31.5235 dB，速度提升 1.7878 倍，时间下降 44.07%。另有同 Case 完整 `n_iter=11`、176 帧复核，PSNR 为 22.8061 dB。
+模型权重、数据集和生成视频没有提交到仓库，按复现命令放置在服务器的 `/root/autodl-tmp` 下。
 
-当前目录是轻量复现仓库，不包含模型权重、数据集和生成视频；这些文件按报告中的 AutoDL 命令下载到 `/root/autodl-tmp`。
+## 正式 20 Case 对照
 
-## 固定参数
+AMP Baseline 总时间为 `25357.059 s`，优化后总时间为 `4588.333 s`，总加速比为 `5.526×`，时间下降 `81.905%`。优化后 20/20 个 Case 有效，最低 PSNR 为 `25.9339 dB`。
 
-```text
-seed=123, height=320, width=512, video_length=16,
-ddim_steps=50, n_iter=1, frame_stride=4, exe_steps=16,
-unconditional_guidance_scale=1.0, guidance_rescale=0.7, perframe_ae
-```
+逐 Case 的完整数据见 [`results/formal_20_case.csv`](results/formal_20_case.csv)。加速比按同一个场景和 Case 的 AMP Baseline 时间除以优化后时间计算，范围为 `4.709×–6.608×`。
 
-## Baseline 命令
+## Baseline 与优化命令口径
+
+两组实验均使用同一套官方场景和 Case、同一权重、`seed=123`、50 步 DDIM、官方 `n_iter`、512×320 输出和官方 PSNR 评价。外层用 `time.perf_counter()` 记录端到端时间，用 `nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,power.draw --format=csv -l 1` 保存 GPU 监控。
+
+## 优化方法
+
+实测日志显示采样循环中存在跨步不变的条件编码、注意力 K/V 和 mask 构造、残差时间投影，以及 DM 分支中重复的特征计算。提交的优化围绕这些重复部分展开：
+
+1. 缓存 image conditioning、固定文本条件、空间注意力 K/V、mask 和残差 time projection；
+2. 持久化 FP16 Conv/Linear 权重，避免运行过程中反复转换和初始化；
+3. 在 DM 分支使用受控特征复用，`feature_interval=3`、`feature_initial=8`、`feature_final=8`、`feature_extrapolate=0`；
+4. WM 分支保持逐步计算，`feature_wm_interval=1`，以避免改变动作条件路径。
+
+这些改动没有减少 DDIM 步数、交互轮数、输出帧数、分辨率或评价方式。主要实现和补丁位于 `patches/`，正式结果文件位于 `results/formal_20_case.csv`。
+
+## 复现入口
 
 ```bash
-/content/micromamba/envs/wma/bin/python \
-  scripts/evaluation/world_model_interaction.py \
-  --seed 123 --ckpt_path ckpts/unifolm_wma_dual.ckpt \
-  --config configs/inference/world_model_interaction.yaml \
-  --savedir results/all20_unitree_z1_stackbox_c1 \
-  --bs 1 --height 320 --width 512 --unconditional_guidance_scale 1.0 \
-  --ddim_steps 50 --ddim_eta 1.0 \
-  --prompt_dir /root/autodl-tmp/ASC26-Embodied-World-Model-Optimization/unitree_z1_stackbox/case1/world_model_interaction_prompts \
-  --dataset unitree_z1_stackbox --video_length 16 --frame_stride 4 \
-  --n_action_steps 16 --exe_steps 16 --n_iter 1 \
-  --timestep_spacing uniform_trailing --guidance_rescale 0.7 --perframe_ae
+git clone https://github.com/FOGLampAsMe/asc-selection-wma-wangpengyu.git
+cd asc-selection-wma-wangpengyu
+
+# 按报告中的环境说明准备官方权重和 20 个 Case 数据，
+# 先运行统一 FP16 AMP Baseline，再运行带缓存和受控特征复用的版本。
+# 运行结束后用官方评分脚本计算 PSNR，并核对 results/formal_20_case.csv。
 ```
 
-## 分析工具
-
-外层使用 `time.perf_counter()` 记录子进程时间，使用 `nvidia-smi --query-gpu ... -l 1` 每秒保存 GPU 利用率、显存和功耗，并使用官方 `psnr_score_for_challenge.py` 计算 PSNR。详见 `results/` 和 `patches/`。
-
-## 优化修改
-
-`patches/resident_model_reuse.patch` 展示了将模型与数据集初始化移入模块级缓存，并在后续请求复用的修改。此修改只针对实测的冷启动瓶颈，不改变模型权重、输入、采样参数或评价脚本。
-
-第四次作业只要求一次单点优化，本仓库记录了模型和数据集常驻复用的完整对照结果。
+仓库保留运行补丁、旧记录和结果说明，旧的单 Case 或其他 GPU 记录只作为历史材料，不参与本次正式结论。
